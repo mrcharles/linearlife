@@ -14,11 +14,21 @@ function BlobDetector:init(terrain, val)
 	local src = terrain
 	self.debug = true
 
+	local curblob = 1
+
+	self:detectEdges(src, val)
+
+
+	return self
+
+end
+
+function BlobDetector:detectEdges(src, val)
 	for y=1, src.height do
 		for x=1, src.width do
 			self:capture( function()
 				local v = src:get(x,y)
-				if v ~= val then return end
+				if v ~= val then return end -- not part of blob
 
 				local n = src:get(x,y-1)
 				local w = src:get(x-1,y)
@@ -32,8 +42,6 @@ function BlobDetector:init(terrain, val)
 			end)
 		end
 	end
-
-	return self
 
 end
 
@@ -132,7 +140,7 @@ function love.load()
 	test:fillDiamondSquare(1, -0.2, 0.5, 1)
 	test:convert(convertfunc)
 
-	blob = BlobDetector:new(test,GroundType.Mountain)
+	blob = BlobDetector:new(test,GroundType.Water)
 	
 	local mapcanvas = love.graphics.newCanvas(256,256)
 	love.graphics.setCanvas(mapcanvas)
