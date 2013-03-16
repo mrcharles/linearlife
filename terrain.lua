@@ -1,24 +1,10 @@
 local Terrain = {}
-
+local Tools = require 'construct.tools'
 local random = function()
 	return math.random() * 2 - 1
 end
 
-function wrap(val, range)
-	-- if not (val <= 256 and val >= -1) then
-	-- 	print('fuck')
-	-- end
-
-	if val > range then
-		--print("wrapping",val,"to",val-range)
-		return val - range
-	elseif val < 1 then
-		--print("wrapping",val,"to",val+range)
-		return val + range
-	else
-		return val
-	end
-end
+local wrap = function(...) return Tools:wrap(...) end
 
 function Terrain:new(w,h, featuresize)
 	local t = {}
