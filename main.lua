@@ -48,10 +48,9 @@ function BlobDetector:setLabelTable( blob, group )
 
 end
 
-function BlobDetector:getBlobID(x,y)
-	local label = self:getLabel(x,y)
-
+function BlobDetector:getFullLabel(label)
 	local labelTable = self.labelTable
+
 	if label then
 		while label ~= labelTable[label] do
 			label = labelTable[label]
@@ -61,32 +60,115 @@ function BlobDetector:getBlobID(x,y)
 	return label
 end
 
-function BlobDetector:markBlob( x, y )
-	local n = self:getLabel(x,y-1)
-	local w = self:getLabel(x-1,y)
+function BlobDetector:getBlobID(x,y)
+	local label = self:getLabel(x,y)
+	return self:getFullLabel(label)
+end
 
-	local label
-	if n and w then
-		if n <= w then
-			label = n
-		elseif w < n then
-			label = w
+function BlobDetector:absorbLabel(new, absorb)
+	if new and absorb and new ~= absorb then
+		local labelTable = self.labelTable
+		absorb = self:getFullLabel(absorb)
+		print("absorb",new,absorb)
+		for blob,label in ipairs(labelTable) do
+			if label == absorb then
+				labelTable[blob] = new
+			end
 		end
-	elseif n then
-		label = n
-	elseif w then
-		label = w
-	else
+		
+	end
+end
+
+function BlobDetector:getKernelLabels(x,y)
+	local w = self:getLabel(x-1,y)
+	local nw = self:getLabel(x-1,y-1)
+	local n = self:getLabel(x,y-1)
+	local ne = self:getLabel(x+1,y-1)
+
+	local min
+
+	if w and ( min == nil or w < min ) then
+		min = w
+	end
+	if nw and ( min == nil or nw < min ) then
+		min = nw
+	end
+	if n and ( min == nil or n < min ) then
+		min = n
+	end
+	if ne and ( min == nil or ne < min ) then
+		min = ne
+	end
+
+	return w,nw,n,ne, min
+end
+
+function BlobDetector:setKernelLabels(x,y,w,nw,n,ne,label)
+	self:setLabel(x,y,label)
+	if w then
+		self:setLabel(x-1,y,label)
+	end
+	if nw then
+		self:setLabel(x-1,y-1,label)
+	end
+	if n then
+		self:setLabel(x,y-1,label)
+	end
+	if ne then
+		self:setLabel(x+1,y-1,label)
+	end
+end
+
+function BlobDetector:markBlob( x, y, nv )
+
+	local w,nw,n,ne,label = self:getKernelLabels(x,y)
+--	print( "found", n, w, ne, nv)
+	-- if n and w then
+	-- 	if n <= w then
+	-- 		label = n
+	-- 	elseif w < n then
+	-- 		label = w
+	-- 	end
+	-- elseif n then
+	-- 	label = n
+	-- elseif w then
+	-- 	label = w
+	-- end
+
+	-- if label and nv and ne and ne < label then
+	-- 	label = ne
+	-- end
+
+--	if nv then
+--		label = Tools:minmax(n,w,ne,nw)
+--	else
+--		label = Tools:minmax(n,w)
+--	end
+
+	if not label then
 		label = self.nextLabel
+		self:setLabelTable(label, label)
 		self.nextLabel = self.nextLabel + 1
 	end
 
-	self:setLabel(x,y,label)
-	self:setLabelTable(label, label)
-	self:setLabelTable(label, n)
-	self:setLabelTable(label, w)
-	self:setLabelTable(w, label)
-	self:setLabelTable(n, label)
+	--print("picked label", label)
+	self:setKernelLabels(x,y,w,nw,n,ne,label)
+
+	self:setLabelTable(w,label)
+	self:setLabelTable(nw,label)
+	self:setLabelTable(n,label)
+	self:setLabelTable(ne,label)
+
+	-- self:setLabelTable(label, n) --self:getFullLabel(n))
+	-- self:setLabelTable(label, w)
+	-- self:setLabelTable(label, ne)
+	-- self:absorbLabel(label,w)
+	-- self:absorbLabel(label,n)
+	-- self:setLabelTable(n, label)
+	-- self:setLabelTable(w, label)
+	-- if nv then
+	-- 	self:setLabelTable(ne, label)
+	-- end
 
 end
 
@@ -133,13 +215,13 @@ end
 
 function EdgeDetector:detectEdges(src)
 	--we iterate one line further so that our blobs can wrap.
-	for y=1, src.height+1 do
-		for x=1, src.width+1 do
-			self:capture( function()
+	for y=1, src.height do
+		for x=1, src.width do
+			self:capture( function(debuglayer)
 				local v = src:get(x,y)
 				--if v ~= val then return end -- not part of blob
 				local blob = self.blobs[v] or BlobDetector:new(src.width,src.height)
-				blob:markBlob(x,y) 
+				blob:markBlob(x,y, src:get(x+1,y) == v) 
 				self.blobs[v] = blob
 
 				local n = src:get(x,y-1)
@@ -149,6 +231,9 @@ function EdgeDetector:detectEdges(src)
 
 				--print(x,y,v,n,w)
 				self:markEdge(v,x,y,n,w,e,s)
+				if debuglayer and v == debuglayer then
+					return true
+				end
 			end)
 		end
 	end
@@ -178,16 +263,18 @@ function EdgeDetector:capture(func)
 	end
 end
 
-function EdgeDetector:step()
+function EdgeDetector:step(...)
 	if not self.done then
 		self.stepidx = self.stepidx or 1
 
-		self.todo[self.stepidx]()
+		local ret = self.todo[self.stepidx](...)
 
 		self.stepidx = self.stepidx + 1
 		if self.stepidx > #self.todo then
 			self.done = true
 		end
+
+		return ret
 	end
 end
 
@@ -260,6 +347,7 @@ local mapimage
 local mapquad
 
 function love.load()
+	math.randomseed(1)
 	test = Terrain:new(128,128,32)
 	test:fillDiamondSquare(1, -0.2, 0.5, 1)
 	test:convert(convertfunc)
@@ -279,11 +367,20 @@ function love.load()
 end
 
 local drawedges
-local drawblob = 4 
+local drawblob = 2 
+local autostep = true
 function love.keypressed(key)
 	if key == " " then
-		drawedges = not drawedges
+		--drawedges = not drawedges
+		autostep = nil
+		while not blob:step(drawblob) do
+
+		end
 		return
+	end
+
+	if key == "a" then
+		autostep = true
 	end
 
 	if key == "right" then
@@ -317,14 +414,18 @@ end
 
 function love.update(dt)
 	--print(dt)
-	for i=1,16 do
-		blob:step()
+	if autostep then
+		for i=1,16 do
+			blob:step()
+		end
 	end
 end
 
 function love.draw()
 
 	if test then
+		love.graphics.setColorMode("modulate")
+		love.graphics.setColor(255,255,255,64)
 		love.graphics.draw(mapimage, size,size,0,size)
 		love.graphics.setBlendMode("alpha")
 		love.graphics.setColorMode("replace")

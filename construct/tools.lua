@@ -88,21 +88,6 @@ function tools:makeClass(super, ...)
 	return c:init(...)
 end
 
-function tools:minmax(...)
-	local min,max
-	for i,v in ipairs(...) do
-		if v then
-			if not min or v < min then
-				min = v
-			end
-			if not max or v > max then
-				max = v
-			end
-		end
-	end
-	return min,max
-end
-
 function tools:wrap(val, range)
 	-- if not (val <= 256 and val >= -1) then
 	-- 	print('fuck')
@@ -119,29 +104,63 @@ function tools:wrap(val, range)
 	end
 end
 
-function tools:colorGenerator(start, delta, index, dir)
-	local c = tools:copy(start) or {255,255,255}
-	local orig = tools:copy(start or c)
-	local d = delta or 60
-	local i = index or math.random(3)
-	local n = dir or ((math.random() > 0.5 and -1) or 1)
+function tools:HSVtoRGB(h,s,v)
+	assert(h >= 0 and h < 360)
+	assert(s >= 0 and s <= 1)
+	assert(v >= 0 and v <= 1)
+
+	--print("in",h,s,v)
+	local C = s * v
+
+	local H = h / 60
+
+	local X = C * ( 1 - math.abs( (H % 2) - 1) )
+
+	--print(C,H,X)
+
+	local r,g,b
+	if H >= 0 and H < 1 then
+		r,g,b = C,X,0
+	elseif H >= 1 and H < 2 then
+		r,g,b = X,C,0
+	elseif H >= 2 and H < 3 then
+		r,g,b = 0,C,X
+	elseif H >= 3 and H < 4 then
+		r,g,b = 0,X,C
+	elseif H >= 4 and H < 5 then
+		r,g,b = X,0,C
+	elseif H >= 5 and H < 6 then
+		r,g,b = C,0,X
+	else
+		assert(false, C,H,X)
+	end
+
+	local m = v - C
+
+	return math.floor((r+m)*255),math.floor((g+m)*255),math.floor((b+m)*255)
+end
+
+function tools:colorGenerator(deltas)
+	local c = {360,1,1}
+	local d = tools:copy(deltas) or {25, 0.33, 0.33}
 
 	return function()
 		local r = tools:copy(c)
 
-		c[i] = tools:wrap(c[i] - d, 255)
-		i = tools:wrap(i + n, 3)
-
-		-- if c[i] < 0 then
-		-- 	if c[i] < 0 then -- we've finished, restart
-		-- 		c = tools:copy(orig)
-		-- 		c[1] = c[1] - d/2
-		-- 		c[2] = c[2] - d/2
-		-- 		c[3] = c[3] - d/2
-		-- 	end
-		-- end
-		--print("new color:", unpack(c))
-		return tools:copy(c)
+		c[1] = c[1] - d[1]
+		if c[1] < 0 then 
+			c[1] = 359.9
+			c[2] = c[2] - d[2]
+			if c[2] < 0 then 
+				c[2] = 1
+				c[3] = c[3] - d[3]
+				if d[3] < 0 then
+					d[3] = 1
+				end
+			end
+		end
+		--print(unpack(c))
+		return {tools:HSVtoRGB(unpack(c))}
 	end
 end
 
