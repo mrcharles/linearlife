@@ -18,6 +18,17 @@ function BlobDetector:init(w,h)
 	return self
 end
 
+function BlobDetector:weldBottomToTop()
+	for x=1,self.width do
+		local t = self:getBlobID(x,1)
+		local b = self:getBlobID(x, self.height)
+
+		if t and b then -- these two blobs touch. make it work
+			self:absorbLabel(t, b)
+		end
+	end
+end
+
 function BlobDetector:getLabel( x, y )
 	x = Tools:wrap(x, self.width)
 	y = Tools:wrap(y, self.height)
@@ -240,22 +251,13 @@ function EdgeDetector:detectEdges(src)
 		end
 	end
 
-	--we iterate one line further so that our blobs can wrap to the top.
+	self:capture(function()
+		for i,blob in ipairs(self.blobs) do
+			print("welding",i)
+			blob:weldBottomToTop()
+		end
+	end)
 
-	-- local y = 1
-	-- for x=1, src.width do
-	-- 	self:capture( function(debuglayer) 
-	-- 		local v = src:get(x,y)
-	-- 		--if v ~= val then return end -- not part of blob
-	-- 		local blob = self.blobs[v] or BlobDetector:new(src.width,src.height)
-	-- 		blob:markBlob(x,y, src:get(x+1,y) == v) 
-	-- 		self.blobs[v] = blob
-
-	-- 		if debuglayer and v == debuglayer then
-	-- 			return true
-	-- 		end
-	-- 	end)
-	-- end
 end
 
 function EdgeDetector:markBlob(v, x, y, n, e)
@@ -365,8 +367,8 @@ local mapimage
 local mapquad
 
 function love.load()
-	math.randomseed(1)
-	test = Terrain:new(128,128,32)
+	--math.randomseed(1)
+	test = Terrain:new(256,256,32)
 	test:fillDiamondSquare(1, -0.2, 0.5, 1)
 	test:convert(convertfunc)
 
@@ -387,6 +389,7 @@ end
 local drawedges
 local drawblob = 2 
 local autostep = true
+local dim = true
 function love.keypressed(key)
 	if key == " " then
 		--drawedges = not drawedges
@@ -395,6 +398,10 @@ function love.keypressed(key)
 
 		end
 		return
+	end
+
+	if key == "c" then
+		dim = not dim
 	end
 
 	if key == "a" then
@@ -421,7 +428,7 @@ function love.keypressed(key)
 end
 
 
-local size = 6
+local size = 3
 local tests = {}
 function love.mousepressed(x,y,btn)
 	x = math.floor(x / size)
@@ -433,7 +440,7 @@ end
 function love.update(dt)
 	--print(dt)
 	if autostep then
-		for i=1,16 do
+		for i=1,64 do
 			blob:step()
 		end
 	end
@@ -442,8 +449,13 @@ end
 function love.draw()
 
 	if test then
-		love.graphics.setColorMode("modulate")
-		love.graphics.setColor(255,255,255,64)
+		if dim then
+			love.graphics.setColorMode("modulate")
+			love.graphics.setColor(255,255,255,64)
+		else
+			love.graphics.setColorMode("replace")
+			love.graphics.setColor(255,255,255)
+		end
 		love.graphics.draw(mapimage, size,size,0,size)
 		love.graphics.setBlendMode("alpha")
 		love.graphics.setColorMode("replace")
@@ -453,7 +465,7 @@ function love.draw()
 		end
 		
 		if drawblob then
-			blob:drawBlob(drawblob, 6, plot)
+			blob:drawBlob(drawblob, size, plot)
 		end
 	end
 
