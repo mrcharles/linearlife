@@ -28,6 +28,9 @@ function BlobDetector:getLabel( x, y )
 end
 
 function BlobDetector:setLabel(x,y,l)
+	x = Tools:wrap(x, self.width)
+	y = Tools:wrap(y, self.height)
+
 	local row = self.data[y] or {}
 	row[x] = l
 	self.data[y] = row
@@ -80,10 +83,10 @@ function BlobDetector:absorbLabel(new, absorb)
 end
 
 function BlobDetector:getKernelLabels(x,y)
-	local w = self:getLabel(x-1,y)
-	local nw = self:getLabel(x-1,y-1)
-	local n = self:getLabel(x,y-1)
-	local ne = self:getLabel(x+1,y-1)
+	local w = self:getBlobID(x-1,y)
+	local nw = self:getBlobID(x-1,y-1)
+	local n = self:getBlobID(x,y-1)
+	local ne = self:getBlobID(x+1,y-1)
 
 	local min
 
@@ -119,7 +122,7 @@ function BlobDetector:setKernelLabels(x,y,w,nw,n,ne,label)
 	end
 end
 
-function BlobDetector:markBlob( x, y, nv )
+function BlobDetector:markBlob( x, y )
 
 	local w,nw,n,ne,label = self:getKernelLabels(x,y)
 --	print( "found", n, w, ne, nv)
@@ -214,14 +217,13 @@ function EdgeDetector:init(terrain)
 end
 
 function EdgeDetector:detectEdges(src)
-	--we iterate one line further so that our blobs can wrap.
 	for y=1, src.height do
 		for x=1, src.width do
 			self:capture( function(debuglayer)
 				local v = src:get(x,y)
 				--if v ~= val then return end -- not part of blob
 				local blob = self.blobs[v] or BlobDetector:new(src.width,src.height)
-				blob:markBlob(x,y, src:get(x+1,y) == v) 
+				blob:markBlob(x,y) 
 				self.blobs[v] = blob
 
 				local n = src:get(x,y-1)
@@ -238,6 +240,22 @@ function EdgeDetector:detectEdges(src)
 		end
 	end
 
+	--we iterate one line further so that our blobs can wrap to the top.
+
+	-- local y = 1
+	-- for x=1, src.width do
+	-- 	self:capture( function(debuglayer) 
+	-- 		local v = src:get(x,y)
+	-- 		--if v ~= val then return end -- not part of blob
+	-- 		local blob = self.blobs[v] or BlobDetector:new(src.width,src.height)
+	-- 		blob:markBlob(x,y, src:get(x+1,y) == v) 
+	-- 		self.blobs[v] = blob
+
+	-- 		if debuglayer and v == debuglayer then
+	-- 			return true
+	-- 		end
+	-- 	end)
+	-- end
 end
 
 function EdgeDetector:markBlob(v, x, y, n, e)
