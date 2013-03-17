@@ -37,6 +37,24 @@ function BlobDetector:getLabel( x, y )
 	end
 end
 
+function BlobDetector:normalize()
+	local seen = {}
+	local count = 0
+	for y=1,self.height do
+		for x=1,self.width do
+			local id = self:getBlobID(x,y)
+			if id then
+				if not seen[id] then
+					seen[id] = true
+					count = count + 1
+				end
+				self:setLabel(x,y, id)
+			end
+		end
+	end
+	print("found",count,"IDs")
+end
+
 function BlobDetector:setLabel(x,y,l)
 	x = Tools:wrap(x, self.width)
 	y = Tools:wrap(y, self.height)

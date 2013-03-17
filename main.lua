@@ -47,10 +47,12 @@ function EdgeDetector:detectEdges(src)
 
 	self:capture(function()
 		for i,blob in ipairs(self.blobs) do
-			print("welding",i)
+			print("---Welding",i)
 			blob:weldBottomToTop()
+			blob:normalize()
 		end
 	end)
+
 
 end
 
@@ -192,6 +194,10 @@ function love.keypressed(key)
 
 		end
 		return
+	end
+
+	if key == "e" then
+		drawedges = not drawedges
 	end
 
 	if key == "c" then
