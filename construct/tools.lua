@@ -70,6 +70,19 @@ function tools:copy(t)
 	end
 end
 
+function tools:Class(super)
+	local c = {}
+	if super then
+		super.__index = super
+		setmetatable(c, super)
+	end
+	function c:new(...)
+		return tools:makeClass(self,...)
+	end	
+
+	return c
+end
+
 function tools:makeClass(super, ...)
 	local c = {}
 

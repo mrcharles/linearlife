@@ -52,7 +52,7 @@ function BlobDetector:normalize()
 			end
 		end
 	end
-	print("found",count,"IDs")
+	--print("found",count,"IDs")
 end
 
 function BlobDetector:setLabel(x,y,l)
@@ -100,7 +100,7 @@ function BlobDetector:absorbLabel(new, absorb)
 	if new and absorb and new ~= absorb then
 		local labelTable = self.labelTable
 		absorb = self:getFullLabel(absorb)
-		print("absorb",new,absorb)
+		--print("absorb",new,absorb)
 		for blob,label in ipairs(labelTable) do
 			if label == absorb then
 				labelTable[blob] = new

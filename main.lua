@@ -2,7 +2,9 @@ Terrain = require 'terrain'
 Tools = require 'construct.tools'
 BlobDetector = require 'blobdetector'
 
-local EdgeDetector = {}
+require 'capturable'
+
+local EdgeDetector = Tools:Class(Capturable)
 
 function EdgeDetector:new(terrain)
 	return Tools:makeClass(EdgeDetector,terrain)
@@ -47,7 +49,7 @@ function EdgeDetector:detectEdges(src)
 
 	self:capture(function()
 		for i,blob in ipairs(self.blobs) do
-			print("---Welding",i)
+			--print("---Welding",i)
 			blob:weldBottomToTop()
 			blob:normalize()
 		end
@@ -69,31 +71,6 @@ function EdgeDetector:markEdge(v, x,y, n,w,e,s)
 	end
 end
 
-function EdgeDetector:capture(func)
-	if self.debug then
-		self.todo = self.todo or {}
-
-		table.insert(self.todo, func)
-	else
-		func()
-	end
-end
-
-function EdgeDetector:step(...)
-	if not self.done then
-		self.stepidx = self.stepidx or 1
-
-		local ret = self.todo[self.stepidx](...)
-
-		self.stepidx = self.stepidx + 1
-		if self.stepidx > #self.todo then
-			self.done = true
-		end
-
-		return ret
-	end
-end
-
 function EdgeDetector:draw(size, plot)
 	if self.edges then
 		for i,edgegroup in ipairs(self.edges) do
@@ -108,6 +85,12 @@ end
 function EdgeDetector:drawBlob(id, size, plot)
 	if self.blobs[id] then
 		self.blobs[id]:draw(size, plot)
+	end
+end
+
+function EdgeDetector:drawAllBlobs(size,plot)
+	for i,blob in ipairs(self.blobs) do
+		blob:draw(size,plot)
 	end
 end
 
@@ -164,7 +147,7 @@ local mapquad
 
 function love.load()
 	--math.randomseed(1)
-	test = Terrain:new(256,256,32)
+	test = Terrain:new(128,128,32)
 	test:fillDiamondSquare(1, -0.2, 0.5, 1)
 	test:convert(convertfunc)
 
@@ -228,7 +211,7 @@ function love.keypressed(key)
 end
 
 
-local size = 3
+local size = 6
 local tests = {}
 function love.mousepressed(x,y,btn)
 	x = math.floor(x / size)
@@ -240,7 +223,7 @@ end
 function love.update(dt)
 	--print(dt)
 	if autostep then
-		for i=1,64 do
+		for i=1,128 do
 			blob:step()
 		end
 	end
@@ -265,7 +248,8 @@ function love.draw()
 		end
 		
 		if drawblob then
-			blob:drawBlob(drawblob, size, plot)
+			blob:drawAllBlobs(size,plot)
+			--blob:drawBlob(drawblob, size, plot)
 		end
 	end
 
