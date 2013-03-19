@@ -3,6 +3,7 @@ Tools = require 'construct.tools'
 BlobDetector = require 'blobdetector'
 
 require 'capturable'
+require 'cellularautomata'
 
 local EdgeDetector = Tools:Class(Capturable)
 
@@ -145,24 +146,105 @@ local steptime = 0.005
 local mapimage
 local mapquad
 
+local caves
+
+local caveblobs
+
+function caveparams(map,x,y)
+	local alive = 0
+
+	if x > 1 then
+		if map:get(x-1,y) == 1 then
+			alive = alive + 1
+		end
+
+		if y > 1 then
+			if map:get(x-1,y-1) == 1 then
+				alive = alive + 1
+			end
+		end
+
+		if y < map.height then
+			if map:get(x-1,y+1) == 1 then
+				alive = alive + 1
+			end
+		end
+	end
+
+	if x < map.width then
+		if map:get(x+1,y) == 1 then
+			alive = alive + 1
+		end
+
+		if y > 1 then
+			if map:get(x+1,y-1) == 1 then
+				alive = alive + 1
+			end
+		end
+
+		if y < map.height then
+			if map:get(x+1,y+1) == 1 then
+				alive = alive + 1
+			end
+		end
+	end
+
+	if y > 1 then
+		if map:get(x,y-1) == 1 then
+			alive = alive + 1
+		end
+	end
+
+	if y < map.height then
+		if map:get(x,y+1) == 1 then
+			alive = alive + 1
+		end
+	end
+
+	return 8 - alive
+end
+
+function caveset(dead)
+	if dead < 4 then
+		return true
+	end
+end
+
+function caveclear(dead)
+	if dead > 4 then
+		return true
+	end
+end
+
+local caveblob = BlobDetector:new(256,256)
+
+function caveiterate(x,y,v)
+	if v == 1 then
+		caveblob:markBlob(x,y)
+	end
+end
+
 function love.load()
 	--math.randomseed(1)
-	test = Terrain:new(128,128,32)
-	test:fillDiamondSquare(1, -0.2, 0.5, 1)
-	test:convert(convertfunc)
+	-- test = Terrain:new(128,128,32)
+	-- test:fillDiamondSquare(1, -0.2, 0.5, 1)
+	-- test:convert(convertfunc)
 
-	blob = EdgeDetector:new(test,GroundType.Water)
+	-- blob = EdgeDetector:new(test,GroundType.Water)
 	
-	local mapcanvas = love.graphics.newCanvas(256,256)
-	love.graphics.setCanvas(mapcanvas)
-	love.graphics.setBlendMode("alpha")
-	love.graphics.setColorMode("replace")
-	test:draw(1, groundcolor, plot)
-	love.graphics.setCanvas()
+	-- local mapcanvas = love.graphics.newCanvas(256,256)
+	-- love.graphics.setCanvas(mapcanvas)
+	-- love.graphics.setBlendMode("alpha")
+	-- love.graphics.setColorMode("replace")
+	-- test:draw(1, groundcolor, plot)
+	-- love.graphics.setCanvas()
 
-	mapimage = love.graphics.newImage(mapcanvas:getImageData())
-	mapimage:setFilter("nearest", "nearest")
+	-- mapimage = love.graphics.newImage(mapcanvas:getImageData())
+	-- mapimage:setFilter("nearest", "nearest")
 
+	caves = CellularAutomata:new(256,256, 10, 0.49, caveclear,caveset,caveparams)
+
+	caves.data:iterate(caveiterate)
 end
 
 local drawedges
@@ -173,7 +255,7 @@ function love.keypressed(key)
 	if key == " " then
 		--drawedges = not drawedges
 		autostep = nil
-		while not blob:step(drawblob) do
+		while not caves:step() do
 
 		end
 		return
@@ -211,50 +293,54 @@ function love.keypressed(key)
 end
 
 
-local size = 6
+local size = 3
 local tests = {}
 function love.mousepressed(x,y,btn)
 	x = math.floor(x / size)
 	y = math.floor(y / size)
 	--table.insert(tests, {x=x,y=y})
-	print(blob.blobs[drawblob]:getLabel(x,y), blob.blobs[drawblob]:getBlobID(x,y))
+	--print(blob.blobs[drawblob]:getLabel(x,y), blob.blobs[drawblob]:getBlobID(x,y))
 end
 
 function love.update(dt)
 	--print(dt)
-	if autostep then
-		for i=1,128 do
-			blob:step()
-		end
-	end
+	-- if autostep then
+	-- 	for i=1,128 do
+	-- 		blob:step()
+	-- 	end
+	-- end
 end
 
 function love.draw()
 
-	if test then
-		if dim then
-			love.graphics.setColorMode("modulate")
-			love.graphics.setColor(255,255,255,64)
-		else
-			love.graphics.setColorMode("replace")
-			love.graphics.setColor(255,255,255)
-		end
-		love.graphics.draw(mapimage, size,size,0,size)
-		love.graphics.setBlendMode("alpha")
-		love.graphics.setColorMode("replace")
+	-- if test then
+	-- 	if dim then
+	-- 		love.graphics.setColorMode("modulate")
+	-- 		love.graphics.setColor(255,255,255,64)
+	-- 	else
+	-- 		love.graphics.setColorMode("replace")
+	-- 		love.graphics.setColor(255,255,255)
+	-- 	end
+	-- 	love.graphics.draw(mapimage, size,size,0,size)
+	-- 	love.graphics.setBlendMode("alpha")
+	-- 	love.graphics.setColorMode("replace")
 
-		if drawedges then
-			blob:draw(size, plot)
-		end
+	-- 	if drawedges then
+	-- 		blob:draw(size, plot)
+	-- 	end
 		
-		if drawblob then
-			blob:drawAllBlobs(size,plot)
-			--blob:drawBlob(drawblob, size, plot)
-		end
-	end
+	-- 	if drawblob then
+	-- 		blob:drawAllBlobs(size,plot)
+	-- 		--blob:drawBlob(drawblob, size, plot)
+	-- 	end
+	-- end
 
-	for i,v in ipairs(tests) do
-		love.graphics.setColor(0,0,0)
-		plot(v.x,v.y,size)
-	end
+	-- for i,v in ipairs(tests) do
+	-- 	love.graphics.setColor(0,0,0)
+	-- 	plot(v.x,v.y,size)
+	-- end
+
+	--caves:draw(size,plot)
+	caveblob:draw(size, plot)
+
 end

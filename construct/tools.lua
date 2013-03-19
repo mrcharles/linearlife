@@ -98,7 +98,9 @@ function tools:makeClass(super, ...)
 
 	assert( super.init ~= nil, "Cannot make a class out of a function without init()")
 
-	return c:init(...)
+	local ret = c:init(...)
+	assert(ret, "Construct.Tools:makeClass() - Init function must return an object.")
+	return ret
 end
 
 function tools:wrap(val, range)

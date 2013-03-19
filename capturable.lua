@@ -24,6 +24,8 @@ function Capturable:step(...)
 		end
 
 		return ret
+	else
+		return true
 	end
 end
 
