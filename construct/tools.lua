@@ -131,8 +131,31 @@ function tools:HSVtoRGB(h,s,v)
 
 	local X = C * ( 1 - math.abs( (H % 2) - 1) )
 
-	--print(C,H,X)
+	local r,g,b = tools:HXCtoRGB(H,X,C)
 
+	local m = v - C
+
+	return math.floor((r+m)*255),math.floor((g+m)*255),math.floor((b+m)*255)
+end
+
+function tools:HSLtoRGB(h,s,l)
+	assert(h >= 0 and h < 360)
+	assert(s >= 0 and s <= 1)
+	assert(l >= 0 and l <= 1)
+
+	local C = ( 1 - math.abs(2*l - 1)) * s
+
+	local H = h / 60
+
+	local X = C * ( 1 - math.abs( (H % 2) - 1) )
+
+	local r,g,b = tools:HXCtoRGB(H,X,C)
+	local m = l  - C/2
+
+	return math.floor((r+m)*255),math.floor((g+m)*255),math.floor((b+m)*255)
+end
+
+function tools:HXCtoRGB(H,X,C)
 	local r,g,b
 	if H >= 0 and H < 1 then
 		r,g,b = C,X,0
@@ -149,33 +172,29 @@ function tools:HSVtoRGB(h,s,v)
 	else
 		assert(false, C,H,X)
 	end
-
-	local m = v - C
-
-	return math.floor((r+m)*255),math.floor((g+m)*255),math.floor((b+m)*255)
+	return r,g,b
 end
 
-function tools:colorGenerator(deltas)
-	local c = {360,1,1}
-	local d = tools:copy(deltas) or {25, 0.33, 0.33}
+function tools:colorGenerator()
+	local c = {360,1,0.5}
+	local d = {20, {0.5,0.6,0.7,0.4,0.3}}
+	local l = 1
 
 	return function()
 		local r = tools:copy(c)
 
 		c[1] = c[1] - d[1]
 		if c[1] < 0 then 
-			c[1] = 359.9
-			c[2] = c[2] - d[2]
-			if c[2] < 0 then 
-				c[2] = 1
-				c[3] = c[3] - d[3]
-				if d[3] < 0 then
-					d[3] = 1
-				end
+			print('loop hue')
+			c[1] = c[1] + 360
+			l = l + 1
+			if l > #(d[2]) then
+				l = 1
 			end
+			c[3] = d[2][l]
 		end
 		--print(unpack(c))
-		return {tools:HSVtoRGB(unpack(c))}
+		return {tools:HSLtoRGB(unpack(c))}
 	end
 end
 

@@ -2,7 +2,7 @@ local Tools = require 'construct.tools'
 
 local BlobDetector = {}
 
-local colorGen = Tools:colorGenerator()
+local colorGen = Tools:colorGenerator({10, 0.3, 0.3})
 
 function BlobDetector:new(...)
 	return Tools:makeClass(BlobDetector,...)
@@ -37,7 +37,7 @@ function BlobDetector:getLabel( x, y )
 	end
 end
 
-function BlobDetector:normalize()
+function BlobDetector:crunch()
 	local seen = {}
 	local count = 0
 	for y=1,self.height do
@@ -52,6 +52,38 @@ function BlobDetector:normalize()
 			end
 		end
 	end
+
+	--now pack the IDs down so that existing IDs are contiguous
+	local indices = {}
+	for k,v in pairs(seen) do
+		table.insert(indices,k)
+	end
+	table.sort(indices)
+
+	local colorGen = Tools:colorGenerator()
+
+	self.colors = {}
+
+	local reversed = {}
+	for i,v in ipairs(indices) do
+		print(v,"becomes",i)
+		reversed[v] = i
+	end
+
+	for y=1,self.height do
+		for x=1,self.width do
+			local id = self:getLabel(x,y)
+			if id then
+				local newid = reversed[id]
+				self:setLabel(x,y, newid)
+				if not self.colors[newid] then
+					self.colors[newid] = colorGen()
+					print(newid,"->",unpack(self.colors[newid]))
+				end
+			end
+		end
+	end
+
 	--print("found",count,"IDs")
 end
 
@@ -89,6 +121,15 @@ function BlobDetector:getFullLabel(label)
 	end
 
 	return label
+end
+
+function BlobDetector:resetLabelTable()
+	local labelTable = self.labelTable
+	local count = #labelTable
+
+	for i=1,count do
+		labelTable[i] = i
+	end
 end
 
 function BlobDetector:getBlobID(x,y)

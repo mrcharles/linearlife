@@ -52,7 +52,7 @@ function EdgeDetector:detectEdges(src)
 		for i,blob in ipairs(self.blobs) do
 			--print("---Welding",i)
 			blob:weldBottomToTop()
-			blob:normalize()
+			blob:crunch()
 		end
 	end)
 
@@ -245,6 +245,14 @@ function love.load()
 	caves = CellularAutomata:new(256,256, 10, 0.49, caveclear,caveset,caveparams)
 
 	caves.data:iterate(caveiterate)
+
+	--caveblob:crunch()
+
+	-- local colors = Tools:colorGenerator()
+	-- for i=1,100 do
+
+	-- 	print(i,"->",unpack(colors()))
+	-- end
 end
 
 local drawedges
