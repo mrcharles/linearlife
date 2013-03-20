@@ -66,7 +66,7 @@ function BlobDetector:crunch()
 
 	local reversed = {}
 	for i,v in ipairs(indices) do
-		print(v,"becomes",i)
+		--print(v,"becomes",i)
 		reversed[v] = i
 	end
 
@@ -78,12 +78,13 @@ function BlobDetector:crunch()
 				self:setLabel(x,y, newid)
 				if not self.colors[newid] then
 					self.colors[newid] = colorGen()
-					print(newid,"->",unpack(self.colors[newid]))
+					--print(newid,"->",unpack(self.colors[newid]))
 				end
 			end
 		end
 	end
 
+	self:resetLabelTable()
 	--print("found",count,"IDs")
 end
 

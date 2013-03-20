@@ -177,7 +177,7 @@ end
 
 function tools:colorGenerator()
 	local c = {360,1,0.5}
-	local d = {20, {0.5,0.6,0.7,0.4,0.3}}
+	local d = {30, {0.5,0.4,0.3,0.6,0.7}}
 	local l = 1
 
 	return function()
@@ -185,7 +185,6 @@ function tools:colorGenerator()
 
 		c[1] = c[1] - d[1]
 		if c[1] < 0 then 
-			print('loop hue')
 			c[1] = c[1] + 360
 			l = l + 1
 			if l > #(d[2]) then
