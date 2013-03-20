@@ -13,7 +13,7 @@ end
 
 function EdgeDetector:init(terrain)
 	local src = terrain
-	self.debug = true
+	--self.debug = true
 
 	self.edges = {}
 
@@ -31,7 +31,7 @@ function EdgeDetector:detectEdges(src)
 				local v = src:get(x,y)
 				--if v ~= val then return end -- not part of blob
 				local blob = self.blobs[v] or BlobDetector:new(src.width,src.height)
-				blob:markBlob(x,y) 
+				blob:markBlob4Way(x,y) 
 				self.blobs[v] = blob
 
 				local n = src:get(x,y-1)
@@ -52,6 +52,7 @@ function EdgeDetector:detectEdges(src)
 		for i,blob in ipairs(self.blobs) do
 			--print("---Welding",i)
 			blob:weldBottomToTop()
+			blob:weldLeftToRight()
 			blob:crunch()
 		end
 	end)
@@ -226,33 +227,25 @@ end
 
 function love.load()
 	--math.randomseed(1)
-	-- test = Terrain:new(128,128,32)
-	-- test:fillDiamondSquare(1, -0.2, 0.5, 1)
-	-- test:convert(convertfunc)
+	test = Terrain:new(256,256,32)
+	test:fillDiamondSquare(1, -0.2, 0.5, 1)
+	test:convert(convertfunc)
 
-	-- blob = EdgeDetector:new(test,GroundType.Water)
+	blob = EdgeDetector:new(test,GroundType.Water)
 	
-	-- local mapcanvas = love.graphics.newCanvas(256,256)
-	-- love.graphics.setCanvas(mapcanvas)
-	-- love.graphics.setBlendMode("alpha")
-	-- love.graphics.setColorMode("replace")
-	-- test:draw(1, groundcolor, plot)
-	-- love.graphics.setCanvas()
+	local mapcanvas = love.graphics.newCanvas(256,256)
+	love.graphics.setCanvas(mapcanvas)
+	love.graphics.setBlendMode("alpha")
+	love.graphics.setColorMode("replace")
+	test:draw(1, groundcolor, plot)
+	love.graphics.setCanvas()
 
-	-- mapimage = love.graphics.newImage(mapcanvas:getImageData())
-	-- mapimage:setFilter("nearest", "nearest")
+	mapimage = love.graphics.newImage(mapcanvas:getImageData())
+	mapimage:setFilter("nearest", "nearest")
 
-	caves = CellularAutomata:new(256,256, 10, 0.49, caveclear,caveset,caveparams)
-
-	caves.data:iterate(caveiterate)
-
-	--caveblob:crunch()
-
-	-- local colors = Tools:colorGenerator()
-	-- for i=1,100 do
-
-	-- 	print(i,"->",unpack(colors()))
-	-- end
+	-- caves = CellularAutomata:new(256,256, 10, 0.49, caveclear,caveset,caveparams)
+	-- caves.data:iterate(caveiterate)
+	-- caveblob:crunch()
 end
 
 local drawedges
@@ -263,9 +256,9 @@ function love.keypressed(key)
 	if key == " " then
 		--drawedges = not drawedges
 		autostep = nil
-		while not caves:step() do
+		-- while not caves:step() do
 
-		end
+		-- end
 		return
 	end
 
@@ -311,7 +304,7 @@ function love.mousepressed(x,y,btn)
 end
 
 function love.update(dt)
-	--print(dt)
+	-- --print(dt)
 	-- if autostep then
 	-- 	for i=1,128 do
 	-- 		blob:step()
@@ -321,34 +314,37 @@ end
 
 function love.draw()
 
-	-- if test then
-	-- 	if dim then
-	-- 		love.graphics.setColorMode("modulate")
-	-- 		love.graphics.setColor(255,255,255,64)
-	-- 	else
-	-- 		love.graphics.setColorMode("replace")
-	-- 		love.graphics.setColor(255,255,255)
-	-- 	end
-	-- 	love.graphics.draw(mapimage, size,size,0,size)
-	-- 	love.graphics.setBlendMode("alpha")
-	-- 	love.graphics.setColorMode("replace")
+	if test then
+		if dim then
+			love.graphics.setColorMode("modulate")
+			love.graphics.setColor(255,255,255,64)
+		else
+			love.graphics.setColorMode("replace")
+			love.graphics.setColor(255,255,255)
+		end
+		love.graphics.draw(mapimage, size,size,0,size)
+		love.graphics.setBlendMode("alpha")
+		love.graphics.setColorMode("replace")
 
-	-- 	if drawedges then
-	-- 		blob:draw(size, plot)
-	-- 	end
+		if drawedges then
+			blob:draw(size, plot)
+		end
 		
-	-- 	if drawblob then
-	-- 		blob:drawAllBlobs(size,plot)
-	-- 		--blob:drawBlob(drawblob, size, plot)
-	-- 	end
-	-- end
+		if drawblob then
+			if drawblob == 0 then
+				blob:drawAllBlobs(size,plot)
+			else
+				blob:drawBlob(drawblob, size, plot)
+			end
+		end
+	end
 
-	-- for i,v in ipairs(tests) do
-	-- 	love.graphics.setColor(0,0,0)
-	-- 	plot(v.x,v.y,size)
-	-- end
+	for i,v in ipairs(tests) do
+		love.graphics.setColor(0,0,0)
+		plot(v.x,v.y,size)
+	end
 
 	--caves:draw(size,plot)
-	caveblob:draw(size, plot)
+	--caveblob:draw(size, plot)
 
 end

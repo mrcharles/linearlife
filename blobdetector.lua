@@ -2,7 +2,7 @@ local Tools = require 'construct.tools'
 
 local BlobDetector = {}
 
-local colorGen = Tools:colorGenerator({10, 0.3, 0.3})
+local colorGen = Tools:colorGenerator()
 
 function BlobDetector:new(...)
 	return Tools:makeClass(BlobDetector,...)
@@ -24,6 +24,17 @@ function BlobDetector:weldBottomToTop()
 
 		if t and b then -- these two blobs touch. make it work
 			self:absorbLabel(t, b)
+		end
+	end
+end
+
+function BlobDetector:weldLeftToRight()
+	for y=1,self.height do
+		local l = self:getBlobID(1,y)
+		local r = self:getBlobID(self.width,y)
+
+		if l and r then -- these two blobs touch. make it work
+			self:absorbLabel(l,r)
 		end
 	end
 end
@@ -152,7 +163,7 @@ function BlobDetector:absorbLabel(new, absorb)
 	end
 end
 
-function BlobDetector:getKernelLabels(x,y)
+function BlobDetector:getKernelLabels8Way(x,y)
 	local w = self:getBlobID(x-1,y)
 	local nw = self:getBlobID(x-1,y-1)
 	local n = self:getBlobID(x,y-1)
@@ -176,7 +187,7 @@ function BlobDetector:getKernelLabels(x,y)
 	return w,nw,n,ne, min
 end
 
-function BlobDetector:setKernelLabels(x,y,w,nw,n,ne,label)
+function BlobDetector:setKernelLabels8Way(x,y,w,nw,n,ne,label)
 	self:setLabel(x,y,label)
 	if w then
 		self:setLabel(x-1,y,label)
@@ -192,9 +203,9 @@ function BlobDetector:setKernelLabels(x,y,w,nw,n,ne,label)
 	end
 end
 
-function BlobDetector:markBlob( x, y )
+function BlobDetector:markBlob8Way( x, y )
 
-	local w,nw,n,ne,label = self:getKernelLabels(x,y)
+	local w,nw,n,ne,label = self:getKernelLabels8Way(x,y)
 
 	if not label then
 		label = self.nextLabel
@@ -203,7 +214,7 @@ function BlobDetector:markBlob( x, y )
 	end
 
 	--print("picked label", label)
-	self:setKernelLabels(x,y,w,nw,n,ne,label)
+	self:setKernelLabels8Way(x,y,w,nw,n,ne,label)
 
 	self:setLabelTable(w,label)
 	self:setLabelTable(nw,label)
@@ -211,6 +222,51 @@ function BlobDetector:markBlob( x, y )
 	self:setLabelTable(ne,label)
 
 end
+
+function BlobDetector:getKernelLabels4Way(x,y)
+	local w = self:getBlobID(x-1,y)
+	local n = self:getBlobID(x,y-1)
+
+	local min
+
+	if w and ( min == nil or w < min ) then
+		min = w
+	end
+	if n and ( min == nil or n < min ) then
+		min = n
+	end
+
+	return w,n, min
+end
+
+function BlobDetector:setKernelLabels4Way(x,y,w,n,label)
+	self:setLabel(x,y,label)
+	if w then
+		self:setLabel(x-1,y,label)
+	end
+	if n then
+		self:setLabel(x,y-1,label)
+	end
+end
+
+function BlobDetector:markBlob4Way( x, y )
+
+	local w,n,label = self:getKernelLabels4Way(x,y)
+
+	if not label then
+		label = self.nextLabel
+		self:setLabelTable(label, label)
+		self.nextLabel = self.nextLabel + 1
+	end
+
+	--print("picked label", label)
+	self:setKernelLabels4Way(x,y,w,n,label)
+
+	self:setLabelTable(w,label)
+	self:setLabelTable(n,label)
+
+end
+
 
 function BlobDetector:draw(size, plot)
 	self.colors = self.colors or {}
