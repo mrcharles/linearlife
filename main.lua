@@ -1,12 +1,6 @@
-local Terrain = require 'terrain'
-local Tools = require 'construct.tools'
-local BlobDetector = require 'blobdetector'
 local terraintest = require 'terraintest'
 local cavestest = require 'cavestest'
 Gamestate = require "hump.gamestate"
-
-require 'capturable'
-require 'cellularautomata'
 
 local size = 3
 local function plot(x,y, size)
