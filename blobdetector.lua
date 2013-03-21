@@ -1,4 +1,18 @@
 local Tools = require 'construct.tools'
+local Map = require 'construct.map'
+
+local Blob = Tools:Class()
+
+function Blob:init()
+	self.size = 0
+	self.map = Map:new()
+	return self
+end
+
+function Blob:add(x,y)
+	self.map:set(x,y,1)
+	self.size = self.size + 1
+end
 
 local BlobDetector = {}
 
@@ -51,6 +65,9 @@ end
 function BlobDetector:crunch()
 	local seen = {}
 	local count = 0
+
+	local blobs = {}
+
 	for y=1,self.height do
 		for x=1,self.width do
 			local id = self:getBlobID(x,y)
@@ -77,8 +94,12 @@ function BlobDetector:crunch()
 
 	local reversed = {}
 	for i,v in ipairs(indices) do
-		--print(v,"becomes",i)
 		reversed[v] = i
+	end
+
+	function updateBlob(x,y,i)
+		local blob = blobs[i] or Blob:new()
+		blob:add(x,y)
 	end
 
 	for y=1,self.height do
@@ -87,6 +108,7 @@ function BlobDetector:crunch()
 			if id then
 				local newid = reversed[id]
 				self:setLabel(x,y, newid)
+				updateBlob(x,y,newid)
 				if not self.colors[newid] then
 					self.colors[newid] = colorGen()
 					--print(newid,"->",unpack(self.colors[newid]))

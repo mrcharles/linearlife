@@ -1,35 +1,6 @@
 local Tools = require 'construct.tools'
+local Map = require 'construct.map'
 require 'capturable'
-
-
-local Map = Tools:Class()
-
-function Map:init(w,h)
-	self.width = w
-	self.height = h
-	self.data = {}
-	return self
-end
-
-function Map:get(x,y)
-	if self.data[y] then
-		return self.data[y][x]
-	end
-end
-
-function Map:set(x,y,v)
-	local row = self.data[y] or {}
-	row[x] = v
-	self.data[y] = row
-end
-
-function Map:iterate(iterator)
-	for y=1,self.height do
-		for x=1,self.width do
-			iterator(x,y,self:get(x,y))
-		end
-	end	
-end
 
 CellularAutomata = Tools:Class(Capturable)
 
