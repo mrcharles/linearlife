@@ -67,7 +67,7 @@ function EdgeDetector:detectEdges(src)
 				local v = src:get(x,y)
 				--if v ~= val then return end -- not part of blob
 				local blob = self.blobs[v] or BlobDetector:new(src.width,src.height)
-				blob:markBlob8Way(x,y) 
+				blob:markBlob4Way(x,y) 
 				self.blobs[v] = blob
 
 				local n = src:get(x,y-1)

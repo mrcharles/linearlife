@@ -14,6 +14,16 @@ function Blob:add(x,y)
 	self.size = self.size + 1
 end
 
+function Blob:draw(size,plot)
+	function iterator(x,y,v)
+		if v == 1 then
+			plot(x,y,size)
+		end
+	end
+
+	self.map:iterate(iterator)	
+end
+
 local BlobDetector = {}
 
 local colorGen = Tools:colorGenerator()
@@ -100,6 +110,7 @@ function BlobDetector:crunch()
 	function updateBlob(x,y,i)
 		local blob = blobs[i] or Blob:new()
 		blob:add(x,y)
+		blobs[i] = blob
 	end
 
 	for y=1,self.height do
@@ -119,6 +130,8 @@ function BlobDetector:crunch()
 
 	self:resetLabelTable()
 	--print("found",count,"IDs")
+
+	return blobs
 end
 
 function BlobDetector:setLabel(x,y,l)

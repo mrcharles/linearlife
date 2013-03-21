@@ -42,6 +42,8 @@ function Map:set(x,y,v)
 	end
 end
 
+
+
 function Map:iterate(iterator)
 	for y=self.y,self.height do
 		for x=self.x,self.width do

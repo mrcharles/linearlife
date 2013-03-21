@@ -14,7 +14,7 @@ function love.load()
 	Gamestate.registerEvents()
 	cavestest.setDraw(plot,size)
 	terraintest.setDraw(plot,size)
-	Gamestate.switch(terraintest,256,256)
+	Gamestate.switch(cavestest,256,256)
 
 end
 

@@ -93,22 +93,33 @@ local function makeTest()
 		caveblob = BlobDetector:new(w,h)
 		caves = CellularAutomata:new(w,h, 10, 0.49, caveclear,caveset,caveparams)
 		caves.data:iterate(caveiterate)
-		caveblob:crunch()
+		self.blobs = caveblob:crunch()
 	end
 
+	local blobidx = 1
+	local highlight
 	function cavetest:keypressed(key)
 		if key == " " then
-			while not caves:step() do
+			highlight = not highlight
+		end
 
-			end
-			return
+		if key == "right" then
+			blobidx = math.min(blobidx + 1, #self.blobs)
+		end
+		if key == "left" then
+			blobidx = math.max(blobidx - 1, 1)
 		end
 	end
 
 	function cavetest:draw()
 		--print('draw')
-		--caves:draw(size,plot)
-		caveblob:draw(size, plot)
+		caves:draw(size,plot)
+
+		if highlight then
+			love.graphics.setColor(255,0,0)
+			self.blobs[blobidx]:draw(size, plot)
+		--caveblob:draw(size, plot)
+		end
 	end
 
 	return cavetest
