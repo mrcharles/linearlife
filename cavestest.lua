@@ -94,6 +94,13 @@ local function makeTest()
 		caves = CellularAutomata:new(w,h, 10, 0.49, caveclear,caveset,caveparams)
 		caves.data:iterate(caveiterate)
 		self.blobs = caveblob:crunch()
+
+		local function sort(a,b)
+			if a.size > b.size then
+				return true
+			end
+		end
+		table.sort(self.blobs, sort)
 	end
 
 	local blobidx = 1
